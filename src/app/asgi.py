@@ -1,25 +1,30 @@
 import asyncio
-import os
 
 import uvicorn
 from fastapi import FastAPI
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
 from app.main import get_application
-from monitoring.handlers import stats_reporter, zmq_context
+from app.monitoring.receivers import Collector
 
 asgi_app: FastAPI = get_application()
+socket_receiver: Collector = Collector()
+templates = Jinja2Templates(directory="templates")
+asgi_app.mount("/static", StaticFiles(directory="static"), name="static")
+
+app_async_tasks = []
 
 
 @asgi_app.on_event("startup")
 async def add_app_db_events_listeners():
-    asyncio.create_task(
-        stats_reporter(color="red")
-    )
+    app_async_tasks.append(asyncio.create_task(socket_receiver.collect_data()))
 
 
 @asgi_app.on_event("shutdown")
 async def add_app_db_events_listeners():
-    zmq_context.term()
+    await socket_receiver.terminate()
+    [task.cancell() for task in app_async_tasks]
 
 
 if __name__ == "__main__":
