@@ -1,3 +1,5 @@
+const legendNames = [];
+
 function createTimeline() {
         let cpu = {};
         let mem = {};
@@ -21,8 +23,8 @@ function createTimeline() {
             minValue: 0
         };
 
-        let cpu_chart = new SmoothieChart(chartPops);
-        let mem_chart = new SmoothieChart(chartPops);
+        let cpuChart = new SmoothieChart(chartPops);
+        let memChart = new SmoothieChart(chartPops);
 
         function add_timeseries(obj, chart, color) {
             obj[color] = new TimeSeries();
@@ -34,35 +36,43 @@ function createTimeline() {
 
         let evtSource = new EventSource("http://localhost:8000/feed");
         evtSource.onmessage = function(event) {
+            let eventData = JSON.parse(event.data);
 
-            console.log("GOT SSE EVENT");
-            console.log(event);
-            console.log("DATA")
-            console.log(event.data)
-
-            let obj = JSON.parse(event.data);
-
-
-
-
-            if (!(obj.color in cpu)) {
-                add_timeseries(cpu, cpu_chart, obj.color);
+            if (!(eventData.color in cpu)) {
+                add_timeseries(cpu, cpuChart, eventData.color);
             }
-            if (!(obj.color in mem)) {
-                add_timeseries(mem, mem_chart, obj.color);
+            if (!(eventData.color in mem)) {
+                add_timeseries(mem, memChart, eventData.color);
             }
-            cpu[obj.color].append(
-                Date.parse(obj.timestamp), obj.cpu
+            cpu[eventData.color].append(
+                Date.parse(eventData.timestamp), eventData.cpu
             )
-            mem[obj.color].append(
-                Date.parse(obj.timestamp), obj.mem
+            mem[eventData.color].append(
+                Date.parse(eventData.timestamp), eventData.mem
             )
+
+            fillLegend(eventData.color, eventData.app_name);
         };
 
-        cpu_chart.streamTo(
+        cpuChart.streamTo(
             document.getElementById("cpu-chart"), 1000
         );
-        mem_chart.streamTo(
+        memChart.streamTo(
             document.getElementById("mem-chart"), 1000
         )
     }
+
+function fillLegend(color, name) {
+
+    let legendColorElement = `<div class='square' style="background: ${color}"></div>`;
+    const legendTable = $(".legend");
+    if (!(legendNames.includes(name))) {
+        legendTable.append(`
+            <tr>
+                <td>${legendColorElement}</td>
+                <td>${name}</td>
+            </tr>
+        `)
+        legendNames.push(name);
+    }
+}
