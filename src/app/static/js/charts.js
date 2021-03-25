@@ -4,7 +4,7 @@ function createTimeline() {
         let cpu = {};
         let mem = {};
 
-        const chartPops = {
+        const cpuChartPops = {
             responsive: true,
             enableDpiScaling: false,
             millisPerPixel: 100,
@@ -19,12 +19,32 @@ function createTimeline() {
                 fontSize: 18
             },
             timestampFormatter: SmoothieChart.timeFormatter,
-            maxValue: 100,
+            maxValue: 10,  // only 10% so it's easier to see small values
             minValue: 0
         };
 
-        let cpuChart = new SmoothieChart(chartPops);
-        let memChart = new SmoothieChart(chartPops);
+        const memChartPops = {
+            responsive: true,
+            enableDpiScaling: false,
+            millisPerPixel: 100,
+            grid: {
+                millisPerLine: 4000,
+                fillStyle: '#fff',
+                strokeStyle: 'rgba(0, 0, 0, 0.08)',
+                verticalSections: 10,
+            },
+            labels: {
+                fillStyle: '#000',
+                fontSize: 18
+            },
+            timestampFormatter: SmoothieChart.timeFormatter,
+            maxValue: 100, // in MB
+            minValue: 0
+        };
+
+
+        let cpuChart = new SmoothieChart(cpuChartPops);
+        let memChart = new SmoothieChart(memChartPops);
 
         function add_timeseries(obj, chart, color) {
             obj[color] = new TimeSeries();
